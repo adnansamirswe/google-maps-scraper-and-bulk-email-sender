@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  extractor-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: extractor-api
+    ports:
+      - "4206:4206"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=4206
+      - DATA_DIR=/app/data
+      - APP_PASSWORD=admin123
+      - JWT_SECRET=change-me-in-production
+    restart: unless-stopped
+    networks:
+      - extractor-net
+
+  extractor-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE=http://localhost:4206
+    container_name: extractor-ui
+    ports:
+      - "4205:4205"
+    depends_on:
+      - extractor-api
+    restart: unless-stopped
+    networks:
+      - extractor-net
+
+networks:
+  extractor-net:
+    driver: bridge

@@ -1,0 +1,9 @@
+main
+data
+*.db
+*.wal
+*.shm
+.env
+.DS_Store
+*.log
+vendor
