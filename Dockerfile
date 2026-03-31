@@ -1,10 +1,8 @@
 # --- Stage 1: Build Backend ---
-FROM golang:1.22-bullseye AS backend-builder
+FROM golang:1.23-bullseye AS backend-builder
 WORKDIR /app
-COPY backend/go.mod backend/go.sum ./
-RUN go mod download
 COPY backend/ .
-RUN go build -o main .
+RUN go build -mod=vendor -o main .
 
 # --- Stage 2: Build Frontend ---
 FROM node:20-alpine AS frontend-builder

@@ -1,17 +1,13 @@
 # Build Stage
-FROM golang:1.22-bullseye AS builder
+FROM golang:1.23-bullseye AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
+# Copy source code and vendor
 COPY . .
 
-# Build the binary
-RUN go build -o main .
+# Build the binary using vendored dependencies
+RUN go build -mod=vendor -o main .
 
 # Runtime Stage
 FROM debian:bullseye-slim
