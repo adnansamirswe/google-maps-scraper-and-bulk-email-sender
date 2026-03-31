@@ -1,6 +1,7 @@
 # --- Stage 1: Build Backend ---
-FROM golang:1.23-bullseye AS backend-builder
+FROM golang:1.24-bookworm AS backend-builder
 WORKDIR /app
+ENV GOTOOLCHAIN=local
 COPY backend/ .
 RUN go build -mod=vendor -o main .
 
