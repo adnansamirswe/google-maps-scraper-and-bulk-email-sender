@@ -9,7 +9,7 @@ RUN go build -o main .
 # --- Stage 2: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
 # Relative path /api allows the UI to talk to the backend through the Nginx proxy
