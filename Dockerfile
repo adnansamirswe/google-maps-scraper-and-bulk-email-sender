@@ -53,19 +53,25 @@ RUN mkdir -p /app/data
 COPY --from=frontend-builder /app/build /usr/share/nginx/html
 
 # Update Nginx config to handle SPA routing and proxy /api to the backend
-RUN echo 'server {\n\
-    listen 4205;\n\
-    location / {\n\
-        root /usr/share/nginx/html;\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-    location /api {\n\
-        proxy_pass http://localhost:4206;\n\
-    }\n\
-}' > /etc/nginx/sites-available/default
+RUN cat <<EOF > /etc/nginx/sites-available/default
+server {
+    listen 4205;
+    location / {
+        root /usr/share/nginx/html;
+        try_files \$uri \$uri/ /index.html;
+    }
+    location /api {
+        proxy_pass http://localhost:4206;
+    }
+}
+EOF
 
 # Create an entrypoint script to run both processes
-RUN echo "#!/bin/sh\nnginx -g 'daemon off;' & \n./main" > /app/entrypoint.sh
+RUN cat <<EOF > /app/entrypoint.sh
+#!/bin/sh
+nginx -g 'daemon off;' &
+./main
+EOF
 RUN chmod +x /app/entrypoint.sh
 
 # Environment Defaults
