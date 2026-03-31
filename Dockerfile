@@ -1,5 +1,5 @@
 # --- Stage 1: Build Backend ---
-FROM golang:1.26-bullseye AS backend-builder
+FROM golang:1.22-bullseye AS backend-builder
 WORKDIR /app
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
