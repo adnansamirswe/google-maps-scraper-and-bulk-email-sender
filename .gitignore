@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
-vendor/
-
+# vendor/ (Removed to allow patched Go 1.26 dependencies)
 # SvelteKit
 .svelte-kit/
 build/
