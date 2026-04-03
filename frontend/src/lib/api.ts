@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_BASE as string) || 'http://localhost:3001';
+// In production we often want same-origin requests (empty base) so `/api/...` is proxied by nginx.
+// Using `??` (not `||`) ensures an explicitly empty string stays empty (and does not fall back).
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://localhost:3001';
 
 const TOKEN_KEY = 'gmap_scraper_token';
 const TOKEN_EXPIRY_KEY = 'gmap_scraper_token_expiry';
