@@ -48,7 +48,7 @@ COPY --from=frontend-builder /app/build /usr/share/nginx/html
 
 RUN cat <<'NGINX' > /etc/nginx/sites-available/default
 server {
-    listen 3000;
+    listen 4205;
 
     location / {
         root /usr/share/nginx/html;
@@ -81,6 +81,6 @@ RUN chmod +x /app/entrypoint.sh
 ENV PORT=4206
 ENV DATA_DIR=/app/data
 
-EXPOSE 3000
+EXPOSE 4205
 
 CMD ["/app/entrypoint.sh"]
