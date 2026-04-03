@@ -1,29 +1,25 @@
 # --- Stage 1: Build Backend ---
 FROM golang:1.24-bookworm AS backend-builder
 WORKDIR /app
-ENV GOTOOLCHAIN=local
 COPY backend/ .
 RUN go build -mod=vendor -o main .
 
 # --- Stage 2: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-COPY frontend/package*.json ./
+COPY frontend/package.json ./
 RUN npm install
 COPY frontend/ .
-# Relative path /api allows the UI to talk to the backend through the Nginx proxy
-ARG VITE_API_BASE
-ENV VITE_API_BASE=${VITE_API_BASE:-/api} 
+ARG VITE_API_BASE=""
+ENV VITE_API_BASE=${VITE_API_BASE}
 RUN npm run build
 
 # --- Stage 3: Final Production Image ---
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 WORKDIR /app
 
-# Install Nginx and Playwright dependencies (Chromium)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
-    wget \
     ca-certificates \
     libnss3 \
     libatk1.0-0 \
@@ -45,41 +41,46 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Backend Binary
 COPY --from=backend-builder /app/main .
 RUN mkdir -p /app/data
 
-# Copy Frontend to Nginx
 COPY --from=frontend-builder /app/build /usr/share/nginx/html
 
-# Update Nginx config to handle SPA routing and proxy /api to the backend
-RUN cat <<EOF > /etc/nginx/sites-available/default
+RUN cat <<'NGINX' > /etc/nginx/sites-available/default
 server {
-    listen 4205;
+    listen 3000;
+
     location / {
         root /usr/share/nginx/html;
-        try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
     }
+
     location /api {
-        proxy_pass http://localhost:4206;
+        proxy_pass http://127.0.0.1:4206;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 86400s;
+        chunked_transfer_encoding on;
     }
 }
-EOF
+NGINX
 
-# Create an entrypoint script to run both processes
-RUN cat <<EOF > /app/entrypoint.sh
+RUN cat <<'ENTRY' > /app/entrypoint.sh
 #!/bin/sh
-nginx -g 'daemon off;' &
-./main
-EOF
+./main &
+exec nginx -g 'daemon off;'
+ENTRY
 RUN chmod +x /app/entrypoint.sh
 
-# Environment Defaults
 ENV PORT=4206
 ENV DATA_DIR=/app/data
 
-# Expose ports
-EXPOSE 4205 4206
+EXPOSE 3000
 
-# Launch the shim
 CMD ["/app/entrypoint.sh"]
